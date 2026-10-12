@@ -1,0 +1,6 @@
+{
+	"allowWrite": ["~/.npm", "~/.bun/install/cache", "~/.cache"],
+	"protect": [],
+	"sandbox": "landlock",
+	"onUnavailable": "warn"
+}
