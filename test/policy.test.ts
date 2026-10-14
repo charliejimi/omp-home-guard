@@ -104,6 +104,50 @@ describe("write, edit, ast_edit (AC-1)", () => {
 	});
 });
 
+describe("targets spelled the way omp's write and edit tools accept them", () => {
+	// omp unwraps a hashline header, strips a stray leading ":" or "@", and expands "~" (also
+	// "~name") before it writes, so each spelling below writes the file named beside it.
+	test.each([
+		["[~/.bashrc]"],
+		["[~/.bashrc#1A2B]"],
+		[":~/.bashrc"],
+		["@~/.bashrc"],
+		["~.bashrc"],
+	])("write %s is blocked like ~/.bashrc", target => {
+		expect(blocked("write", { path: target, content: "x" })).toBe("protected-write");
+	});
+
+	test("write @<absolute home path> is blocked", () => {
+		expect(blocked("write", { path: `@${path.join(home, ".bashrc")}`, content: "x" })).toBe("protected-write");
+	});
+
+	test.each([["[src/a.ts]"], ["[src/a.ts#1A2B]"], [":./src/a.ts"], ["@my-file.txt"], ["[a#b]"]])("write %s inside the project passes", target => {
+		expect(blocked("write", { path: target, content: "x" })).toBeUndefined();
+	});
+
+	test("write @<absolute project path> passes", () => {
+		expect(blocked("write", { path: `@${path.join(project, "src", "a.ts")}`, content: "x" })).toBeUndefined();
+	});
+
+	test("a multi-file hashline edit is blocked when any header names a protected place", () => {
+		const input = "*** Begin Patch\n[src/a.ts#1A2B]\nPUT 1.=1:\n+x\n[~/.bashrc#3C4D]\nPUT 1.=1:\n+y\n*** End Patch\n";
+		expect(blocked("edit", { input, paths: ["src/a.ts", "~/.bashrc"] })).toBe("protected-write");
+		expect(blocked("edit", { input: input.replace("[~/.bashrc#3C4D]\nPUT 1.=1:\n+y", "[~/.config/app.json#3C4D]\nREM"), paths: ["src/a.ts", "~/.config/app.json"] })).toBe("protected-write");
+	});
+
+	test("a multi-file hashline edit inside the project passes", () => {
+		const input = "*** Begin Patch\n[src/a.ts#1A2B]\nPUT 1.=1:\n+x\n[src/b.ts#3C4D]\nPUT 1.=1:\n+y\n*** End Patch\n";
+		expect(blocked("edit", { input, paths: ["src/a.ts", "src/b.ts"] })).toBeUndefined();
+	});
+
+	test("a hashline MV into a protected place is blocked; a move inside the project passes", () => {
+		const into = (dest: string) => `*** Begin Patch\n[src/a.ts#1A2B]\nMV ${dest}\n*** End Patch\n`;
+		expect(blocked("edit", { input: into("~/.ssh/authorized_keys"), path: "src/a.ts", paths: ["src/a.ts"] })).toBe("protected-write");
+		expect(blocked("edit", { input: into('"~/.ssh/authorized_keys"'), path: "src/a.ts", paths: ["src/a.ts"] })).toBe("protected-write");
+		expect(blocked("edit", { input: into("src/moved.ts"), path: "src/a.ts", paths: ["src/a.ts"] })).toBeUndefined();
+	});
+});
+
 describe("bash with the sandbox on (AC-2)", () => {
 	test.each([
 		"rm -rf ~/.config",

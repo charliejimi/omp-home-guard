@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - 2026-10-14
+
+### Fixed
+
+- `write`, `edit`, and `ast_edit` targets are resolved the way omp's tools resolve them before writing: a hashline header (`[path]`, `[path#TAG]`) is unwrapped, a stray leading `:` or `@` is dropped, and `~name` is read as home-relative. `write` to `[~/.bashrc]`, `:~/.bashrc`, or `@~/.bashrc` is now blocked like `write` to `~/.bashrc`.
+- Hashline `edit`, omp's default edit mode: every file header of a multi-file patch and every `MV` destination is checked, so a patch that writes, deletes (`REM`), or moves a file into the home directory is blocked. A multi-file patch that names any protected place is refused as a whole.
+
 ## [0.1.0] - 2026-10-12
 
 ### Added

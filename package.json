@@ -1,6 +1,6 @@
 {
 	"name": "omp-home-guard",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"description": "An oh-my-pi (omp) extension that keeps the agent from deleting, overwriting, or creating files in your home directory outside the project: a static check of every tool call, and on Linux a Landlock sandbox around every bash call that the processes it starts inherit.",
 	"type": "module",
